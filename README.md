@@ -1,4 +1,4 @@
-# Binance Algorithmic Strategy Runner
+# Runner ![Runner](https://github.com/FergusInLondon/Runner/workflows/Runner/badge.svg)
 
 A massive WIP that may or may not be worth an actual README at this point in time. It has no tests, and the account functionality is still being baked in.
 
