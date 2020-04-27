@@ -48,7 +48,7 @@ class Runner(object):
             lambda kline: self.runnable.process(self.parse_dataframe(kline)))
         self.bm.start()
 
-    def parse_dataframe(kline):
+    def parse_dataframe(self, kline):
         """
         """
         df = pd.DataFrame([kline])
