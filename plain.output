@@ -1,0 +1,55 @@
+Feature: Account State
+  Background: 
+
+  Scenario: Stay synchronised with account updates
+    Given an account with no initial state ... passed in 0.000s
+    And that account is currently awaiting messages ... passed in 0.000s
+    Given an account update with full capabilities ... passed in 0.000s
+    When that account update is processed ... passed in 0.000s
+    Then the account should have full capabilities ... passed in 0.000s
+    Given an account update with minimal capabilities ... passed in 0.000s
+    When that account update is processed ... passed in 0.000s
+    Then the account should have minimal capabilities ... passed in 0.000s
+
+  Scenario: Stay synchronised with balance updates
+    Given an account with no initial state ... passed in 0.000s
+    And that account is currently awaiting messages ... passed in 0.000s
+    Given a BTC balance of 50 free and 25 locked ... passed in 0.000s
+    And a balance update of 20 BTC ... passed in 0.000s
+    When that balance update is processed ... passed in 0.000s
+    Then the account should have a balance of 70 BTC free ... passed in 0.000s
+    Given a balance update of -30 BTC ... passed in 0.000s
+    When that balance update is processed ... passed in 0.000s
+    Then the account should have a balance of 40 BTC free ... passed in 0.000s
+
+  Scenario: Stay synchronised with position updates
+    Given an account with no initial state ... passed in 0.000s
+    And that account is currently awaiting messages ... passed in 0.000s
+    Given an account position of BTC at 10 free and 25 locked ... passed in 0.000s
+    And a position update of ETH at 20 free and 50 locked ... passed in 0.000s
+    When that position update is processed ... passed in 0.000s
+    Then there should be a BTC balance of 10 free and 25 locked ... passed in 0.000s
+    And there should be a ETH balance of 20 free and 50 locked ... passed in 0.000s
+    And there should be a total of 2 balances ... passed in 0.000s
+    Given a position update of BTC at 5 free and 30 locked ... passed in 0.000s
+    When that position update is processed ... passed in 0.000s
+    Then there should be a BTC balance of 5 free and 30 locked ... passed in 0.000s
+    And there should be a ETH balance of 20 free and 50 locked ... passed in 0.000s
+    And there should be a total of 2 balances ... passed in 0.000s
+
+  Scenario: Process orders requests approved by the calculator
+    Given an account with no initial state ... passed in 0.000s
+    And that account is currently awaiting messages ... passed in 0.000s
+    Given a market order to buy BTC ... passed in 0.000s
+    And the calculator will accept the order with a size of 0.0032 ... passed in 0.000s
+    When the order event is processed ... passed in 0.000s
+    Then the API should recieve an order of 0.0032 BTC ... passed in 0.000s
+
+  Scenario: Skip order requests rejected by the calculator
+    Given an account with no initial state ... passed in 0.000s
+    And that account is currently awaiting messages ... passed in 0.000s
+    Given a market order to buy BTC ... passed in 0.000s
+    And the calculator will reject the order ... passed in 0.000s
+    When the order event is processed ... passed in 0.000s
+    Then the API should not recieve any orders ... passed in 0.000s
+

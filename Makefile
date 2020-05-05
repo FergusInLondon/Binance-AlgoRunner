@@ -1,9 +1,20 @@
-.PHONY: deps test
+.PHONY: env-check build lint deps test run
+
+env-check:
+	@sh setup.sh
+
+build:
+	echo "build docker container"
+
+lint:
+	poetry run flake8
 
 deps:
-	pip install pandas
-	pip install python-binance
+	poetry install --no-interaction
 
 test:
-	python -m test.account
-	python -m test.runner
+	poetry run pytest
+	poetry run behave
+
+run:
+	poetry run python run.py
