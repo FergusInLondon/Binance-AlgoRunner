@@ -90,7 +90,7 @@ class TestRunner(unittest.TestCase):
             dataframes.
         """
 
-        df = Runner.parse_dataframe(example_kline)
+        df = Runner("apiKey", "apiSecret", "symbolToMonitor", MockStrategy()).parse_dataframe(example_kline)
         self.assertFalse(df.empty)
         self.assertEqual(df.shape, (1, 22))
         self.assertEqual(df.index.name, "EventTime")
