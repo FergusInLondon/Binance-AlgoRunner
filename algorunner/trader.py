@@ -1,6 +1,12 @@
-from algorunner.events import (
-    AccountStatus, UpdateEvent, UpdateType
-)
+from logging import getLogger
+from queue import Queue
+from threading import Thread
+
+from algorunner import messages
+from algorunner.abstract import Calculator
+from algorunner.adapters.base import Adapter
+
+logger = getLogger()
 
 
 class Trader:
@@ -11,39 +17,63 @@ class Trader:
     so, at what rate/quantity.
     """
 
-    def __call__(self, update_type: str, updated_props: UpdateEvent):
-        """Sets account state - i.e. balance and positions."""
+    def __init__(self,
+                 calculator: Calculator,
+                 adapter: Adapter,
+                 queue: Queue,
+                 symbol: str):
+        self.calculator = calculator
+        self.adapter = adapter
+        self.symbol = symbol
+        self.queue = queue
 
-        if update_type == UpdateType.ACCOUNT:
-            self.status = updated_props
+    def start(self):
+        """ """
+        # @todo - do we *really* want it as a daemon; I see two arguments here.
+        self.thread = Thread(target=self._listen, daemon=True)
+        self.thread.start()
 
-        """
-        # This required python > 3.10.*; alas there's a bug with pip
-        # on this version. So this will likely need to be refactored
-        # to use simple if/else comparisons until pip 21.2.3 is released.
-        # @see https://github.com/pypa/pip/pull/10252
-        # @todo
-        match update_type:
-            case UpdateType.BALANCE:
-                # @todo Eh, look at whatever fuckery is involved.
-                # surely the "Locked" balance needs updating to..?!
-                asset = updated_props["Asset"]
-                self.status.Positions[asset]["Free"] += updated_props["Update"]
-            case UpdateType.ACCOUNT:
-                self.status = updated_props
-            case UpdateType.POSITION:
-                self.status["Positions"] = updated_props
-        """
+    def stop(self):
+        # @todo - need some signal magic here.
         pass
 
-    def initial_state(self, status: AccountStatus):
-        self.status = status
+    def _listen(self):
+        message_handlers = {
+            messages.MessageType.REQUEST_BUY: self._handleBuy,
+            messages.MessageType.REQUEST_SELL: self._handleSell,
+            messages.MessageType.UPDATE_BALANCE: self._handleBalanceUpdate,
+            messages.MessageType.UPDATE_ACCOUNT: self._handleAccountUpdate,
+            messages.MessageType.UPDATE_POSITION: self._handlePositionUpdate,
+            messages.MessageType.UPDATE_ORDER: self._handleOrderUpdate
+        }
 
-    def start(self, handler):
+        while True:
+            trader_message = self.queue.get()
+
+            handler = message_handlers.get(trader_message.Type)
+            if not handler:
+                logger.warn("recieved message without known handler")
+                continue
+
+            handler(trader_message.Msg)
+
+    def _handleBuy(self, buy_message: messages.MessageBuyOrder):
         pass
 
-    def balance(self, asset):
-        return self.status.get(asset, None)
+    def _handleSell(self, sell_message: messages.MessageSellOrder):
+        pass
+
+    def _handleBalanceUpdate(self, update: messages.MessageBalanceUpdate):
+        pass
+
+    def _handleAccountUpdate(self, update: messages.MessageAccountUpdate):
+        pass
+
+    def _handlePositionUpdate(self, update: messages.MessagePositionUpdate):
+        pass
+
+    def _handleOrderUpdate(self, update: messages.MessageOrderUpdate):
+        pass
 
 
 """

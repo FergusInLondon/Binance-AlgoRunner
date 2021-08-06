@@ -1,7 +1,9 @@
-from algorunner.trader import Trader
+from queue import Queue
+
+from algorunner import abstract
 from algorunner.adapters import ADAPTERS, Credentials
 from algorunner.exceptions import UnknownExchange
-from algorunner.abstract.strategy import Strategy
+from algorunner.trader import Trader
 
 
 class Runner(object):
@@ -11,18 +13,33 @@ class Runner(object):
     `run.py`.
     """
 
-    def __init__(self, creds: Credentials, symbol: str, strategy: Strategy):
+    def __init__(self,
+                 creds: Credentials,
+                 symbol: str,
+                 strategy: abstract.Strategy,
+                 calculator: abstract.Calculator):
         adapter_cls = ADAPTERS.get(creds["exchange"])
         if not adapter_cls:
             raise UnknownExchange(creds["exchange"])
 
-        self.account = Trader()
-        self.symbol = symbol
-        self.strategy = strategy
         self.adapter = adapter_cls()
+        self.strategy = strategy
+        self.symbol = symbol
 
-        self.adapter.connect(creds, self.account)
+        trade_queue = Queue()
+        self.trader = Trader(
+            symbol=symbol,
+            queue=trade_queue,
+            adapter=self.adapter,
+            calculator=calculator
+        )
+
+        self.adapter.connect(creds, self.trader)
 
     def run(self):
         """ """
         self.adapter.run(self.strategy, self.symbol)
+
+    def stop(self):
+        # @todo - for graceful shutdown
+        pass
