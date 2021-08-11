@@ -1,0 +1,83 @@
+from algorunner.messages import MessageType
+
+from test.helpers import *
+from test.adapters.binance.fixtures import *
+
+
+_FIXTURE_PATTERN = "test/fixtures/binance/{fixture}.json"
+ACCOUNT_UPDATE_PATTERN = _FIXTURE_PATTERN.format(fixture="account")
+BALANCE_UPDATE_PATTERN = _FIXTURE_PATTERN.format(fixture="balance_update")
+EXECUTION_REPORT_PATTERN = _FIXTURE_PATTERN.format(fixture="execution_report")
+ACCOUNT_INFORMATION_PATTERN = _FIXTURE_PATTERN.format(fixture="outbound_account_info")
+ACCOUNT_POSITION_PATTERN = _FIXTURE_PATTERN.format(fixture="outbound_account_position")
+
+
+def check_position(positions, symbol, free, locked):
+    assert symbol in positions
+    assert positions[symbol].Free == free
+    assert positions[symbol].Locked == locked
+
+
+def test_account_transformation(user_transformer, load_fixture):
+    with load_fixture(ACCOUNT_UPDATE_PATTERN) as account_payload:
+        message = user_transformer.initial_rest_payload(account_payload)
+
+    assert message.Type == MessageType.UPDATE_ACCOUNT
+
+    msg = message.Msg
+    assert not msg['CanDeposit']
+    assert msg['CanTrade']
+    assert msg['CanWithdraw']
+
+    assert len(msg['Positions']) == 2
+    check_position(msg['Positions'], 'BTC', 4723846.89208129, 0.0)
+    check_position(msg['Positions'], 'LTC', 4763368.68006011, 0.0)
+
+
+def test_stream_balance_update_transformation(user_transformer, load_fixture):
+    with load_fixture(BALANCE_UPDATE_PATTERN) as balance:
+        message = user_transformer(balance)
+
+    assert message.Type == MessageType.UPDATE_BALANCE
+
+    msg = message.Msg
+    assert msg['Asset'] == 'BTC'
+    assert msg['Update'] == 100.0
+
+
+def stream_execution_report_transformation(user_transformer, load_fixture):
+    with load_fixture(EXECUTION_REPORT_PATTERN) as execution:
+        message = user_transformer(execution)
+
+    pass # @todo - transformation not implemented
+
+
+def test_stream_account_info_transformation(user_transformer, load_fixture):
+    with load_fixture(ACCOUNT_INFORMATION_PATTERN) as information:
+        message = user_transformer(information)
+    
+    assert message.Type == MessageType.UPDATE_ACCOUNT
+
+    msg = message.Msg
+    assert msg['CanDeposit']
+    assert msg['CanTrade']
+    assert msg['CanWithdraw']
+
+    assert len(msg['Positions']) == 5
+    check_position(msg['Positions'], 'LTC', 17366.18538083, 0.0)
+    check_position(msg['Positions'], 'BTC', 10537.85314051, 2.19464093)
+    check_position(msg['Positions'], 'ETH', 17902.35190619, 0.0)
+    check_position(msg['Positions'], 'BNC', 1114503.29769312, 0.0)
+    check_position(msg['Positions'], 'NEO', 0.0, 0.0)
+
+
+def stream_account_position_transformation(user_transformer, load_fixture):
+    with load_fixture(ACCOUNT_POSITION_PATTERN) as position:
+        message = user_transformer(position)
+
+    assert message.Type == MessageType.UPDATE_POSITION
+
+    msg = message.Msg
+    assert "BTC" in msg
+    assert msg["BTC"].Free
+    assert msg["BTC"].Locked

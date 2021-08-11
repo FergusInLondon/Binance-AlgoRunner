@@ -1,9 +1,18 @@
+from logging import Logger
 from queue import Queue
+from signal import SIGTERM, signal
 
 from algorunner import abstract
-from algorunner.adapters import ADAPTERS, Credentials
+from algorunner.adapters import ADAPTERS, Credentials, Adapter
 from algorunner.exceptions import UnknownExchange
-from algorunner.trader import Trader
+
+
+def get_adapter(exchange: str, *args, **kwargs) -> Adapter:
+    adapter_cls = ADAPTERS.get(exchange)
+    if not adapter_cls:
+        raise UnknownExchange(exchange)
+
+    return adapter_cls(*args, **kwargs)
 
 
 class Runner(object):
@@ -15,31 +24,30 @@ class Runner(object):
 
     def __init__(self,
                  creds: Credentials,
-                 symbol: str,
-                 strategy: abstract.Strategy,
-                 calculator: abstract.Calculator):
-        adapter_cls = ADAPTERS.get(creds["exchange"])
-        if not adapter_cls:
-            raise UnknownExchange(creds["exchange"])
-
-        self.adapter = adapter_cls()
+                 strategy: abstract.BaseStrategy,
+                 logger: Logger):
+        self.sync_queue = Queue()
+        self.adapter = get_adapter(creds["exchange"], self.sync_queue)
+        logger.warn(signal)
         self.strategy = strategy
-        self.symbol = symbol
+        self.logger = logger
 
-        trade_queue = Queue()
-        self.trader = Trader(
-            symbol=symbol,
-            queue=trade_queue,
-            adapter=self.adapter,
-            calculator=calculator
-        )
+        self.strategy.start_sync(self.sync_queue, self.adapter)
+        self.adapter.connect(creds)
+        signal(SIGTERM, self._handle_sigterm())
 
-        self.adapter.connect(creds, self.trader)
+    def _handle_sigterm(self):
+        def _handler(signum, frame):
+            self.logger.warn("recieved sigterm: shutting down services")
+            self.stop()
+
+        return _handler
 
     def run(self):
         """ """
-        self.adapter.run(self.strategy, self.symbol)
+        self.adapter.monitor_user(self.trader_queue)
+        self.adapter.run(self.strategy, self.strategy.process)
 
     def stop(self):
-        # @todo - for graceful shutdown
-        pass
+        self.strategy.shutdown()
+        self.adapter.disconnect()
