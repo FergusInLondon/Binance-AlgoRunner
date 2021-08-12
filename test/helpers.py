@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-from contextlib import contextmanager
 from json import load
 from pytest import fixture
 

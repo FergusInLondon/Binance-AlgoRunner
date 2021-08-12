@@ -10,8 +10,26 @@
 
 ## Development
 
+### Make Targets
+
+The `Makefile` contains a selection of useful targets for simplfying the development workflow.
+
+```
+➜  Runner git:(v2/trader-actor) ✗ make help
+help:            Show this help.
+env-check:               Check that the current environment is capable of running AlgoRunner.
+build:                   Build docker image, tagged "algorunner:<commit>"
+lint:                    Run code quality checks
+deps:                    Install all required dependencies (including for development)
+test:                    Run all tests - including both unit tests and BDD feature tests
+run:                     Run AlgoRunner
+todo:                    Scan the codebase for items tagged with "@todo"
+
+```
+
 ### Docker
-There's also a `Dockerfile` contained in this repository; this installs all the requirements to commence development.
+
+There's also a `Dockerfile` contained in this repository; this builds a `python:3.9-slim` based Docker Image, with all development dependencies. This can be built using the aforementioned `Makefile`.
 
 ### Finding Tasks
 

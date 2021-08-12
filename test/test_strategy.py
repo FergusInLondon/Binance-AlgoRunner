@@ -1,7 +1,10 @@
 import pytest
 
-from algorunner.strategy import *
-
+from algorunner.strategy import (
+    load_strategy,
+    StrategyNotFound,
+    InvalidStrategyProvided
+)
 
 def test_default_strategies_module():
     strategy = load_strategy('Example')

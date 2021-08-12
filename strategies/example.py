@@ -1,9 +1,12 @@
 import pandas as pd
 
-from algorunner.strategy import Strategy
+from algorunner.abstract import BaseStrategy
+from algorunner.abstract.base_strategy import (
+    AccountState, TransactionRequest, AuthorisationDecision
+)
 
 
-class Example(Strategy):
+class Example(BaseStrategy):
     """
     A simple example strategy that computes the average price change over
     the previous 5 2000ms updates.
@@ -13,7 +16,8 @@ class Example(Strategy):
     _testing_tag = True
 
     def __init__(self):
-        self.series = pd.DataFrame()
+        self.series = pd.DataFrame
+        super().__init__()
 
     def process(self, tick):
         self.series = self.series.append(tick)
@@ -21,3 +25,6 @@ class Example(Strategy):
         if self.series.shape[0] > 5:
             recent_window = pd.to_numeric(self.series[-5:]["PriceChange"])
             print("Average price change over past 5 windows: ", recent_window.mean())
+
+    def authorise(self, state: AccountState, trx: TransactionRequest) -> AuthorisationDecision:
+        pass

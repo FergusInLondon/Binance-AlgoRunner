@@ -12,3 +12,5 @@ RUN poetry config virtualenvs.create false && make deps
 
 COPY . /code
 ENTRYPOINT [ "make" "run" ]
+
+# @todo - secondary layer with development dependencies removed
