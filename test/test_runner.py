@@ -1,16 +1,12 @@
-from logging import getLogger
 from signal import SIGTERM
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock, patch
 
 from algorunner.abstract import BaseStrategy
 from algorunner.adapters import Credentials
 from algorunner.exceptions import UnknownExchange
 from algorunner.runner import Runner
-
-
-test_logger = getLogger()
 
 
 @pytest.fixture
@@ -33,8 +29,7 @@ def test_handle_graceful_shutdown(mock_adapter: MagicMock, mock_strategy: MagicM
     with patch('algorunner.runner.signal') as mock_signal:
         r = Runner(
             creds=Credentials(exchange="binance"),
-            strategy=mock_strategy,
-            logger=test_logger
+            strategy=mock_strategy
         )
 
         # check components are ran
@@ -54,9 +49,8 @@ def test_handle_graceful_shutdown(mock_adapter: MagicMock, mock_strategy: MagicM
 def invalid_exchange_should_trigger_exception(mock_strategy):
     have_exception = False
     try:
-        Runner(Credentials(exchange="lolnoexchange"), mock_strategy, test_logger)
+        Runner(Credentials(exchange="lolnoexchange"), mock_strategy)
     except UnknownExchange:
         have_exception = True
 
     assert have_exception 
-    pass

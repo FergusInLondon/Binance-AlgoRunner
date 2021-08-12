@@ -1,8 +1,8 @@
-from logging import getLogger
 from typing import Callable
 
 from binance.client import Client
 from binance import BinanceSocketManager
+
 import pandas as pd
 
 from algorunner.adapters.base import (
@@ -12,9 +12,6 @@ from algorunner.adapters.base import (
 from algorunner.mutations import (
     AccountUpdate, BaseUpdate, BalanceUpdate, CapabilitiesUpdate, Position
 )
-
-
-logger = getLogger()
 
 
 class BinanceAdapter(Adapter):

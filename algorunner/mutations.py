@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from logging import Logger
 from typing import Tuple
+
+from loguru import logger
 
 from algorunner.exceptions import NoBalanceAvailable, InvalidUpdate
 
@@ -36,12 +37,15 @@ class BaseUpdate(ABC):
     def __init__(self, **kwargs):
         for prop in self.REQUIRED_PROPS:
             if prop not in kwargs:
+                logger.error("invalid arguments supplied to update object!", {
+                    "expected": self.REQUIRED_PROPS, "actual": kwargs
+                })
                 raise InvalidUpdate(prop, self.__class__)
 
         self.__dict__.update(kwargs)
 
     @abstractmethod
-    def handle(self, log: Logger, state: AccountState) -> AccountState:
+    def handle(self, state: AccountState) -> AccountState:
         pass
 
 
@@ -73,7 +77,8 @@ class OrderUpdate(BaseUpdate):
         "symbol", "orderId", "side", "type", "status", "quantity"
     ]
 
-    def handle(self, log: Logger, state: AccountState) -> AccountState:
+    def handle(self, state: AccountState) -> AccountState:
+        logger.info("recieved inbound update for pending transaction")
         order = state.orders.get(self.order_id, {})
         # @todo use the | operator when Py 3.9 is fixed.
         state.orders[self.order_id] = {**order, **{
@@ -92,7 +97,8 @@ class BalanceUpdate(BaseUpdate):
     expressed as delta between balances."""
     REQUIRED_PROPS = ["asset", "delta"]
 
-    def handle(self, log: Logger, state: AccountState) -> AccountState:
+    def handle(self, state: AccountState) -> AccountState:
+        logger.info(f"recieved inbound balance update for '{self.asset}'")
         asset_balance = state.balances.get(self.asset, Position(
             asset=self.asset, free=0, locked=0
         ))
@@ -107,7 +113,8 @@ class AccountUpdate(BaseUpdate):
     """An update containing any balances which have changed."""
     REQUIRED_PROPS = ["balances"]  # List[Position]
 
-    def handle(self, log: Logger, state: AccountState) -> AccountState:
+    def handle(self, state: AccountState) -> AccountState:
+        logger.info("recieved inbound user update")
         for p in self.balances:
             state.balances[p.asset] = p
 
@@ -119,10 +126,11 @@ class CapabilitiesUpdate(BaseUpdate):
     """The first update an account will recieve upon initialisation."""
     REQUIRED_PROPS = ["can_withdraw", "can_trade", "can_deposit", "positions"]
 
-    def handle(self, log: Logger, state: AccountState) -> AccountState:
+    def handle(self, state: AccountState) -> AccountState:
+        logger.info("recieved inbound capabilities update for current user")
         state.permissions["can_withdraw"] = self.can_withdraw
         state.permissions["can_trade"] = self.can_trade
         state.permissions["can_deposit"] = self.can_deposit
 
         position_update = AccountUpdate(balances=self.positions)
-        return position_update.handle(log, state)
+        return position_update.handle(state)

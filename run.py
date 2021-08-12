@@ -1,16 +1,13 @@
 import configparser
-from logging import getLogger
 
 import click
+from loguru import logger
 
-from algorunner import exceptions
+from algorunner.exceptions import InvalidConfiguration
 from algorunner.runner import (
     Credentials, Runner
 )
 from algorunner.strategy import load_strategy
-
-
-logger = getLogger()
 
 
 @click.command()
@@ -41,7 +38,7 @@ def entrypoint(
     """
 
     if not testing:
-        logger.warn("WARNING: Running in LIVE trading mode.")
+        logger.warning("running in LIVE trading mode")
 
     cfg = configparser.ConfigParser()
     cfg.read(config_file)
@@ -56,9 +53,9 @@ def entrypoint(
         if not all([api_key, api_secret, strategy_name, exchange, trading_symbol]):
             raise KeyError
     except KeyError:
-        raise exceptions.InvalidConfiguration()
+        raise InvalidConfiguration()
 
-    strategy = load_strategy(strategy_name, logger)
+    strategy = load_strategy(strategy_name)
     runner = Runner(Credentials(
         exchange=exchange,
         key=api_key,
@@ -70,9 +67,5 @@ def entrypoint(
 if __name__ == "__main__":
     try:
         entrypoint()
-    except exceptions.InvalidConfiguration as e:
-        logger.critical("CRITICAL FAILURE: incorrect configuration provided", e.message)
-    except exceptions.UnknownExchange as e:
-        logger.critical("CRITICAL FAILURE: invalid exchange specified in config", e.message)
     except Exception as e:
-        logger.critical("CRITICAL FAILURE: Terminating...", e)
+        logger.exception("encountered unrecoverable error. terminating algorunner.", e.message)

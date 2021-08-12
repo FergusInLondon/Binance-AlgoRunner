@@ -63,3 +63,7 @@ class InvalidStrategyProvided(Exception):
 class StrategyNotFound(Exception):
     """Raised when the module loader is unable to retrieve the strategy."""
     pass
+
+
+class StrategyExceptionThresholdBreached(Exception):
+    pass

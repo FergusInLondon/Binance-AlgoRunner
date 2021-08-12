@@ -1,5 +1,4 @@
 import pandas as pd
-from logging import Logger
 
 from algorunner.abstract import BaseStrategy
 from algorunner.abstract.base_strategy import (
@@ -16,9 +15,9 @@ class Example(BaseStrategy):
     # this tag is used in a unit test targeting the strategy loader. ignore!
     _testing_tag = True
 
-    def __init__(self, log: Logger):
+    def __init__(self):
         self.series = pd.DataFrame
-        super().__init__(log)
+        super().__init__()
 
     def process(self, tick):
         self.series = self.series.append(tick)

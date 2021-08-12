@@ -1,8 +1,8 @@
 from queue import Queue
 from unittest import mock
-from logging import getLogger
 from time import sleep
 
+from loguru import logger
 from behave import *
 
 from algorunner.abstract import (
@@ -24,7 +24,6 @@ def new_running_sync_agent(context):
     context.agent_params = {
         "queue": Queue(),
         "adapter": mock.MagicMock(),
-        "log": getLogger(),
         "auth": mock.MagicMock()
     }
 

@@ -1,10 +1,6 @@
-from logging import getLogger
-
 import pytest
 
 from algorunner.mutations import *
-
-test_logger = getLogger()
 
 
 class NotAnEvent:
@@ -29,7 +25,7 @@ def test_balance_update():
 
     for test in balance_update_cases:
         update, expectations = test
-        update.handle(test_logger, account)
+        update.handle(account)
 
         for e in expectations:
             (free, _) = account.balance(e[0])
@@ -60,7 +56,7 @@ def test_account_update():
     account = AccountState()
 
     for test in account_update_cases:
-        test[0].handle(test_logger, account)
+        test[0].handle(account)
 
         for balance in test[1]:
             (symbol, free, locked) = balance
