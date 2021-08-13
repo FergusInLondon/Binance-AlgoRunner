@@ -2,7 +2,7 @@ import pandas as pd
 
 from algorunner.abstract import BaseStrategy
 from algorunner.abstract.base_strategy import (
-    AccountState, TransactionRequest, AuthorisationDecision
+    AccountState, TransactionRequest
 )
 
 
@@ -26,5 +26,5 @@ class Example(BaseStrategy):
             recent_window = pd.to_numeric(self.series[-5:]["PriceChange"])
             print("Average price change over past 5 windows: ", recent_window.mean())
 
-    def authorise(self, state: AccountState, trx: TransactionRequest) -> AuthorisationDecision:
+    def authorise(self, state: AccountState, trx: TransactionRequest) -> TransactionRequest:
         pass

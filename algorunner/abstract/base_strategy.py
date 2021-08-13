@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from queue import Queue
 from threading import Thread
 from typing import Callable, Optional
@@ -8,24 +7,9 @@ from loguru import logger
 import pandas as pd
 
 from algorunner.exceptions import StrategyExceptionThresholdBreached
+from algorunner.monitoring import Timer
 from algorunner.mutations import AccountState, is_update
-from algorunner.adapters.base import Adapter, TransactionParams
-
-
-@dataclass
-class TransactionRequest:
-    """Dispatched by `process` this triggers risk calculation via `authorise`
-    and potential dispatch of a transaction to the exchange."""
-    symbol: str
-    order_type: str
-
-
-@dataclass
-class AuthorisationDecision:
-    """Returned by `authorise` and determines whether a transaction can be
-    made, and the appropriate parameters for that transaction."""
-    accepted: bool
-    params: Optional[TransactionParams]
+from algorunner.adapters.base import Adapter, InvalidOrder, TransactionRequest, Tick
 
 
 class ShutdownRequest:
@@ -70,7 +54,7 @@ class BaseStrategy(ABC):
         def _listen(self):
             logger.info("listening for events and inbound messages")
 
-            exception_count = 0  # count exceptions over past 5 mins.
+            exception_count = 0  # @todo count exceptions over past 5 mins. Probs a job for a contextmanager.
             while True:
                 message = self.queue.get()
                 message_type = type(message)
@@ -97,16 +81,29 @@ class BaseStrategy(ABC):
                         logger.critical("exception rate has breached threshold, failing..")
                         raise StrategyExceptionThresholdBreached("too many exceptions encountered!")
 
-            logger.warn("trader thread has completed")
+            logger.warn("syncagent has completed")
 
         def _transaction_handler(self, trx: TransactionRequest):
-            decision = self.authorisation_guard(self.state, trx)
-            if not decision.accepted:
-                logger.info("transaction rejected: failed defined auth rules")
+            trx = self.authorisation_guard(self.state, trx)
+            if not trx.approved:
+                logger.info(f"transaction rejected: {trx.reason}")
                 return
 
-            logger.info("transaction accepted: passing to API adapter for dispatch")
-            self.api.execute(decision.params)
+            t = Timer()
+            with t:
+                try:
+                    logger.info("transaction accepted: passing to API adapter for dispatch")
+                    self.api.execute(trx)
+                except InvalidOrder:
+                    pass
+            # @todo hook(API_PROCESS)
+    
+    def __call__(self, tick: Tick):
+        t = Timer()
+        with t:
+            self.process(tick)
+        
+        # @todo call hook
 
     def start_sync(self, queue: Queue, adapter: Adapter):
         self.sync_agent = self.SyncAgent(queue, adapter, self.log)
@@ -122,20 +119,23 @@ class BaseStrategy(ABC):
 
     def shutdown(self):
         self.sync_agent.stop("shutdown requested")
-
+    
+    def account_state(self) -> AccountState:
+        return self.sync_agent.account_state
+    
     @abstractmethod
-    def process(self, tick: pd.DataFrame):
+    def authorise(self,
+                  state: AccountState,
+                  trx: TransactionRequest) -> TransactionRequest:
         """
-        @todo - accept Union[pd.DataFrame, RawMarketPayload]
-            where RawMarketPayload is a TypedDict w/ no pandas processing.
+        @todo - define params.
         """
         pass
 
     @abstractmethod
-    def authorise(self,
-                  state: AccountState,
-                  trx: TransactionRequest) -> AuthorisationDecision:
+    def process(self, tick: Tick):
         """
-        @todo - define params.
+        @todo - accept Union[pd.DataFrame, RawMarketPayload]
+            where RawMarketPayload is a TypedDict w/ no pandas processing.
         """
         pass

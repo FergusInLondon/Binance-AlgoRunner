@@ -5,13 +5,10 @@ from time import sleep
 from loguru import logger
 from behave import *
 
-from algorunner.abstract import (
-    AuthorisationDecision,
-    BaseStrategy,
-    ShutdownRequest,
-    TransactionRequest,
+from algorunner.abstract.base_strategy import (
+    ShutdownRequest, BaseStrategy
 )
-from algorunner.adapters.base import Adapter, TransactionParams
+from algorunner.adapters.base import Adapter, OrderType, TransactionRequest
 from algorunner.mutations import (
     Position, BalanceUpdate, AccountUpdate, CapabilitiesUpdate
 )
@@ -101,21 +98,21 @@ def check_balance_count(context, count):
 @given("a request to buy {symbol}")
 def market_order(context, symbol):
     context.message_list.append(TransactionRequest(
-        symbol=symbol, order_type="buy"
+        reason="", symbol="", quantity="", price="", order_type=OrderType.MARKET_SELL
     ))
 
 @given("the order is declined")
 def calculator_rejection(context):
-    context.agent_params["auth"].return_value = AuthorisationDecision(
-        accepted=False, params=None
+    context.agent_params["auth"].return_value = TransactionRequest(
+        approved=False, reason="", symbol="", quantity="", price="", order_type=OrderType.MARKET_SELL
     )
+        
 
 @given("the order of {symbol} is accepted with a size of {size:g}")
 def calculator_accepted(context, symbol, size):
-    context.agent_params["auth"].return_value = AuthorisationDecision(
-        accepted=True, params=TransactionParams()
+    context.agent_params["auth"].return_value = TransactionRequest(
+        approved=True, reason="", symbol="", quantity="", price="", order_type=OrderType.MARKET_SELL
     )
-
 @then("the API should recieve an order of {quantity:g} {symbol}")
 def check_for_order(context, quantity, symbol):
     context.agent_params["adapter"].execute.assert_called_once()
