@@ -11,6 +11,6 @@ RUN make env-check
 RUN poetry config virtualenvs.create false && make deps 
 
 COPY . /code
-ENTRYPOINT [ "make" "run" ]
+ENTRYPOINT [ "make", "local" ]
 
 # @todo - secondary layer with development dependencies removed
