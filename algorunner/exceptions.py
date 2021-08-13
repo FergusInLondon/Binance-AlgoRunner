@@ -2,7 +2,6 @@ from typing import Optional, List
 
 MSG_INVALID_CONFIG = "unable to parse all required values from configuration"
 MSG_INVALID_CONFIG_W_FIELDS = "unable to parse [{fields}] from configuration"
-MSG_UNKNOWN_EXCHANGE = "unable to find adapter for exchange '{name}'"
 
 
 class InvalidConfiguration(Exception):
@@ -15,15 +14,6 @@ class InvalidConfiguration(Exception):
             MSG_INVALID_CONFIG if not invalid_fields
             else MSG_INVALID_CONFIG_W_FIELDS.format(fields=invalid_fields.join(", "))
         )
-
-
-class UnknownExchange(Exception):
-    """
-    Raised when the exchange specified in the configuration is unknown.
-    """
-    def __init__(self, exchange_name: str, exception: Optional[Exception]):
-        self.message = MSG_UNKNOWN_EXCHANGE.format(name=exchange_name)
-        self.exc = exception
 
 
 class NoBalanceAvailable(Exception):

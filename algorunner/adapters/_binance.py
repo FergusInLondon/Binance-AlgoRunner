@@ -6,7 +6,7 @@ from binance import BinanceSocketManager
 import pandas as pd
 
 from algorunner.adapters.base import (
-    Adapter, Credentials, InvalidPayloadRecieved
+    Adapter, Credentials, InvalidPayloadRecieved, TransactionParams, register_adapter
 )
 
 from algorunner.mutations import (
@@ -14,8 +14,11 @@ from algorunner.mutations import (
 )
 
 
+@register_adapter
 class BinanceAdapter(Adapter):
     """ """
+
+    identifier = "binance"
 
     class MarketStreamRawTransformer:
         pass
@@ -138,6 +141,12 @@ class BinanceAdapter(Adapter):
         self.socket_manager.start_symbol_ticker_socket(
             symbol, lambda p: process(self.market_transformer(p))
         )
+
+    def execute(self, trx: TransactionParams):
+        pass
+
+    def disconnect(self):
+        pass
 
 
 """

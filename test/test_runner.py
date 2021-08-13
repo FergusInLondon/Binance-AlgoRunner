@@ -1,3 +1,4 @@
+
 from signal import SIGTERM
 from unittest.mock import MagicMock, patch
 
@@ -5,13 +6,13 @@ import pytest
 
 from algorunner.abstract import BaseStrategy
 from algorunner.adapters import Credentials
-from algorunner.exceptions import UnknownExchange
+from algorunner.adapters.base import AdapterError
 from algorunner.runner import Runner
 
 
 @pytest.fixture
 def mock_adapter() -> MagicMock:
-    with patch('algorunner.runner.get_adapter') as mock:
+    with patch('algorunner.runner.factory') as mock:
         mock.return_value = MagicMock()
         yield mock.return_value
 
@@ -50,7 +51,7 @@ def invalid_exchange_should_trigger_exception(mock_strategy):
     have_exception = False
     try:
         Runner(Credentials(exchange="lolnoexchange"), mock_strategy)
-    except UnknownExchange:
+    except AdapterError:
         have_exception = True
 
     assert have_exception 

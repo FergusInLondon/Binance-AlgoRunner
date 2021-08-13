@@ -2,6 +2,12 @@ from abc import ABC, abstractmethod
 from typing import Callable, TypedDict
 from queue import Queue
 
+from loguru import logger
+
+
+class AdapterError(Exception):
+    pass
+
 
 class InvalidPayloadRecieved(Exception):
     """InvalidPayloadRecieved is thrown when an invalid message is recieved
@@ -51,3 +57,30 @@ class Adapter(ABC):
     @abstractmethod
     def disconnect(self):
         pass
+
+
+_available_adapters = {}
+
+
+def register_adapter(cls):
+    logger.debug("registering new adapter...")
+    try:
+        identifier = getattr(cls, "identifier")
+    except AttributeError:
+        raise AdapterError(f"cannot find identifier for adapter class: {cls.__name__}")
+
+    if hasattr(_available_adapters, identifier):
+        raise AdapterError(f"attempt at registering duplicate adapter for identifier: {identifier}")
+
+    _available_adapters[cls.identifier] = cls
+    logger.debug(f"registered new adapter: '{identifier}'")
+    return cls
+
+
+def factory(requested_adapter: str, *args, **kwargs) -> Adapter:
+    logger.info(f"instantiating adapter for '{requested_adapter}'")
+    cls = _available_adapters.get(requested_adapter)
+    if not cls:
+        raise AdapterError(f"no adapter registered for identifier {requested_adapter}")
+
+    return cls(*args, **kwargs)

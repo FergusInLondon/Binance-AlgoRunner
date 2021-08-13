@@ -4,16 +4,7 @@ from signal import SIGTERM, signal
 from loguru import logger
 
 from algorunner import abstract
-from algorunner.adapters import ADAPTERS, Credentials, Adapter
-from algorunner.exceptions import UnknownExchange
-
-
-def get_adapter(exchange: str, *args, **kwargs) -> Adapter:
-    adapter_cls = ADAPTERS.get(exchange)
-    if not adapter_cls:
-        raise UnknownExchange(exchange)
-
-    return adapter_cls(*args, **kwargs)
+from algorunner.adapters import Credentials, factory
 
 
 class Runner(object):
@@ -27,7 +18,7 @@ class Runner(object):
                  creds: Credentials,
                  strategy: abstract.BaseStrategy):
         self.sync_queue = Queue()
-        self.adapter = get_adapter(creds["exchange"], self.sync_queue)
+        self.adapter = factory(creds["exchange"], self.sync_queue)
         self.strategy = strategy
 
         self.strategy.start_sync(self.sync_queue, self.adapter)
