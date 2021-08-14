@@ -9,6 +9,10 @@ All development is done against the `develop` branch, although at this time that
 | Master  | ![Unit Tests & Build](https://github.com/FergusInLondon/Runner/actions/workflows/pythonapp.yml/badge.svg)![CodeQL](https://github.com/FergusInLondon/Runner/actions/workflows/codeql-analysis.yml/badge.svg) |
 | Develop | ![Unit Tests & Build](https://github.com/FergusInLondon/Runner/actions/workflows/pythonapp.yml/badge.svg?branch=develop)![CodeQL](https://github.com/FergusInLondon/Runner/actions/workflows/codeql-analysis.yml/badge.svg?branch=develop) |
 
+### Living Design Doc
+
+...
+
 ## Defining a strategy
 
 To define a strategy to execute you simply need to define a `Strategy` class and place it in the `./strategies` folder where it can be loaded. A strategy **must** inherit from `BaseStrategy` and **must** implement two methods: `process` and `authorise`.
