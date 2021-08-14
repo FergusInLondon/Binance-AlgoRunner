@@ -6,11 +6,11 @@ from binance import BinanceSocketManager
 import pandas as pd
 
 from algorunner.adapters.base import (
-<<<<<<< HEAD
-    Adapter, Credentials, InvalidOrder, InvalidPayloadError, OrderType, TransactionRequest, register_adapter
-=======
-    Adapter, Credentials, InvalidPayloadRecieved, TransactionParams, register_adapter
->>>>>>> develop
+    register_adapter, Adapter
+)
+
+from algorunner.adapters.messages import (
+    Credentials, InvalidOrder, InvalidPayloadError, OrderType, TransactionRequest
 )
 
 from algorunner.mutations import (

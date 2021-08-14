@@ -1,9 +1,8 @@
 import pandas as pd
 
-from algorunner.abstract import BaseStrategy
-from algorunner.abstract.base_strategy import (
-    AccountState, TransactionRequest
-)
+from algorunner.adapters import TransactionRequest
+from algorunner.mutations import AccountState
+from algorunner.strategy import BaseStrategy
 
 
 class Example(BaseStrategy):

@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from algorunner.abstract import BaseStrategy
 from algorunner.adapters import Credentials
-from algorunner.adapters.base import AdapterError
+from algorunner.adapters.messages import AdapterError
+from algorunner.strategy import BaseStrategy
 from algorunner.runner import Runner
 
 
