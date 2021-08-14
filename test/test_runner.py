@@ -2,28 +2,9 @@
 from signal import SIGTERM
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from algorunner.abstract import BaseStrategy
 from algorunner.adapters import Credentials
-from algorunner.adapters.base import AdapterError
+from algorunner.adapters.messages import AdapterError
 from algorunner.runner import Runner
-
-
-@pytest.fixture
-def mock_adapter() -> MagicMock:
-    with patch('algorunner.runner.factory') as mock:
-        mock.return_value = MagicMock()
-        yield mock.return_value
-
-@pytest.fixture
-def mock_strategy() -> MagicMock:
-    abstractmethods = BaseStrategy.__abstractmethods__
-    BaseStrategy.__abstractmethods__ = {}
-
-    yield MagicMock()
-
-    BaseStrategy.__abstractmethods__ = abstractmethods
 
 
 def test_handle_graceful_shutdown(mock_adapter: MagicMock, mock_strategy: MagicMock):

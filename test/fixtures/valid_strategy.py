@@ -1,7 +1,8 @@
-from algorunner.abstract import BaseStrategy
-from algorunner.abstract.base_strategy import (
-    AccountState, TransactionRequest
-)
+from algorunner.adapters import TransactionRequest
+from algorunner.mutations import AccountState
+from algorunner.strategy import BaseStrategy
+
+
 class ValidStrategy(BaseStrategy):
     def process(self, tick):
         return True

@@ -3,19 +3,25 @@ from typing import Optional
 
 from loguru import logger
 
-from algorunner.abstract import BaseStrategy
-from algorunner.exceptions import (
-    FailureLoadingStrategy, InvalidStrategyProvided, StrategyNotFound
+from algorunner.strategy import BaseStrategy
+from algorunner.strategy.exceptions import (
+    FailureLoadingStrategy,
+    InvalidStrategyProvided,
+    StrategyNotFound,
 )
 
 
-_DEFAULT_STRATEGY_PARENT_MODULE = 'strategies.{module}'
+_DEFAULT_STRATEGY_PARENT_MODULE = "strategies.{module}"
 
 
-def load_strategy(strategy_name: str, module_name: Optional[str] = None) -> BaseStrategy:
+def load_strategy(
+    strategy_name: str, module_name: Optional[str] = None
+) -> BaseStrategy:
     """Dynamically load strategies located in the `/strategies` directory"""
     if not module_name:
-        logger.debug("using default module name - looking in strategies directory")
+        logger.debug(
+            "using default module name - looking in strategies directory"
+        )
         module_name = _DEFAULT_STRATEGY_PARENT_MODULE.format(
             module=strategy_name.lower()
         )
