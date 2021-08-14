@@ -2,7 +2,6 @@ from queue import Queue
 from unittest import mock
 from time import sleep
 
-from loguru import logger
 from behave import *
 
 from algorunner.abstract import (
