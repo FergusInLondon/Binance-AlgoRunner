@@ -3,8 +3,8 @@ from typing import Optional
 
 from loguru import logger
 
-from algorunner.abstract import BaseStrategy
-from algorunner.exceptions import (
+from algorunner.strategy import BaseStrategy
+from algorunner.strategy.exceptions import (
     FailureLoadingStrategy, InvalidStrategyProvided, StrategyNotFound
 )
 

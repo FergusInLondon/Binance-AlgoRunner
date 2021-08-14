@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from algorunner.abstract import BaseStrategy
 from algorunner.adapters import Credentials
-from algorunner.adapters.base import AdapterError
+from algorunner.adapters.messages import AdapterError
+from algorunner.strategy import BaseStrategy
 from algorunner.runner import Runner
 
 
@@ -29,7 +29,7 @@ def mock_strategy() -> MagicMock:
 def test_handle_graceful_shutdown(mock_adapter: MagicMock, mock_strategy: MagicMock):
     with patch('algorunner.runner.signal') as mock_signal:
         r = Runner(
-            creds=Credentials(exchange="binance"),
+            creds=Credentials(exchange="binance", key="", secret=""),
             strategy=mock_strategy
         )
 

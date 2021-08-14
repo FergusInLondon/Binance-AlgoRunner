@@ -1,19 +1,23 @@
-from queue import Queue
-from unittest import mock
 from time import sleep
+from unittest import mock
+from queue import Queue
 
 from behave import *
 
-from algorunner.abstract import (
-    AuthorisationDecision,
-    BaseStrategy,
-    ShutdownRequest,
-    TransactionRequest,
+from algorunner.strategy import (
+    ShutdownRequest, BaseStrategy
 )
-from algorunner.adapters.base import Adapter, TransactionParams
+from algorunner.adapters import (
+    Adapter, TransactionRequest, OrderType
+)
 from algorunner.mutations import (
     Position, BalanceUpdate, AccountUpdate, CapabilitiesUpdate
 )
+
+
+#
+#  GIVEN
+#
 
 
 @given("a running sync agent awaiting messages")
@@ -31,15 +35,6 @@ def new_running_sync_agent(context):
     context.agent.start()
     assert context.agent.is_running()
 
-@when("the sync agent is stopped")
-def stop_sync_agent(context):
-    context.agent_params["queue"].put(ShutdownRequest(reason="bdd tests"))
-    sleep(.25)
-
-@then("it should no longer be running")
-def sync_agent_not_running(context):
-    assert not context.agent.is_running()
-
 @given("an account update with {capabilities} capabilities")
 def account_update_full_capabilities(context, capabilities):
     hasPermission = (capabilities == "full") # todo - just a straight payload swap
@@ -47,20 +42,6 @@ def account_update_full_capabilities(context, capabilities):
         can_withdraw=hasPermission, can_trade=hasPermission, can_deposit=hasPermission,
         positions=[]
     ))
-
-@when("all messages are processed")
-def account_update_processed(context):
-    for msg in context.message_list:
-        context.agent_params["queue"].put(msg)
-
-    sleep(.5)
-    context.message_list = []
-
-@then("the account should have {capabilities} capabilities")
-def account_has_full_capabilities(context, capabilities):
-    hasPermission = (capabilities == "full")
-    for perm in ['can_withdraw', 'can_deposit', 'can_trade']:
-        assert context.agent.state.capability(perm) == hasPermission
 
 @given("a {symbol} balance of {free:d} free and {locked:d} locked")
 def current_balance(context, symbol, free, locked):
@@ -72,11 +53,6 @@ def balance_update(context, quantity, symbol):
         asset=symbol, delta=quantity
     ))
 
-@then("the account should have a balance of {balance:d} {symbol} free")
-def balance_for_symbol(context, balance, symbol):
-    (free, _) = context.agent.state.balance(symbol)
-    assert free == balance
-
 @given("an account position of {symbol} at {free:d} free and {locked:d} locked")
 def account_with_balance(context, symbol, free, locked):
     context.agent.state.balances[symbol] = Position(symbol, free=free, locked=locked)
@@ -87,6 +63,65 @@ def position_update(context, symbol, free, locked):
         balances=[Position(symbol, free=free, locked=locked)]
     ))
 
+@given("a request to buy {symbol}")
+def market_order(context, symbol):
+    context.message_list.append(TransactionRequest(
+        reason="", symbol="", quantity="", price="", order_type=OrderType.MARKET_SELL
+    ))
+
+@given("the order is declined")
+def calculator_rejection(context):
+    context.agent_params["auth"].return_value = TransactionRequest(
+        approved=False, reason="", symbol="", quantity="", price="", order_type=OrderType.MARKET_SELL
+    )
+        
+
+@given("the order of {symbol} is accepted with a size of {size:g}")
+def calculator_accepted(context, symbol, size):
+    context.agent_params["auth"].return_value = TransactionRequest(
+        approved=True, reason="", symbol="", quantity="", price="", order_type=OrderType.MARKET_SELL
+    )
+
+
+#
+#  WHEN
+#
+
+
+@when("all messages are processed")
+def account_update_processed(context):
+    for msg in context.message_list:
+        context.agent_params["queue"].put(msg)
+
+    sleep(.5)
+    context.message_list = []
+
+@when("the sync agent is stopped")
+def stop_sync_agent(context):
+    context.agent_params["queue"].put(ShutdownRequest(reason="bdd tests"))
+    sleep(.25)
+
+
+#
+#  THEN
+#
+
+
+@then("it should no longer be running")
+def sync_agent_not_running(context):
+    assert not context.agent.is_running()
+
+@then("the account should have {capabilities} capabilities")
+def account_has_full_capabilities(context, capabilities):
+    hasPermission = (capabilities == "full")
+    for perm in ['can_withdraw', 'can_deposit', 'can_trade']:
+        assert context.agent.state.capability(perm) == hasPermission
+
+@then("the account should have a balance of {balance:d} {symbol} free")
+def balance_for_symbol(context, balance, symbol):
+    (free, _) = context.agent.state.balance(symbol)
+    assert free == balance
+
 @then("there should be a {symbol} balance of {free:d} free and {locked:d} locked")
 def check_symbol_balance(context, symbol, free, locked):
     (_free, _locked) = context.agent.state.balance(symbol)
@@ -96,24 +131,6 @@ def check_symbol_balance(context, symbol, free, locked):
 @then("there should be a total of {count:d} balances")
 def check_balance_count(context, count):
     assert len(context.agent.state.balances.keys()) == count
-
-@given("a request to buy {symbol}")
-def market_order(context, symbol):
-    context.message_list.append(TransactionRequest(
-        symbol=symbol, order_type="buy"
-    ))
-
-@given("the order is declined")
-def calculator_rejection(context):
-    context.agent_params["auth"].return_value = AuthorisationDecision(
-        accepted=False, params=None
-    )
-
-@given("the order of {symbol} is accepted with a size of {size:g}")
-def calculator_accepted(context, symbol, size):
-    context.agent_params["auth"].return_value = AuthorisationDecision(
-        accepted=True, params=TransactionParams()
-    )
 
 @then("the API should recieve an order of {quantity:g} {symbol}")
 def check_for_order(context, quantity, symbol):

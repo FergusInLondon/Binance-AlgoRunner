@@ -1,31 +1,17 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from algorunner.hooks import Hook, hook
 from queue import Queue
 from threading import Thread
 from typing import Callable, Optional
 
 from loguru import logger
-import pandas as pd
 
-from algorunner.exceptions import StrategyExceptionThresholdBreached
+from algorunner.strategy.exceptions import StrategyExceptionThresholdBreached
+
+from algorunner.monitoring import Timer
 from algorunner.mutations import AccountState, is_update
-from algorunner.adapters.base import Adapter, TransactionParams
-
-
-@dataclass
-class TransactionRequest:
-    """Dispatched by `process` this triggers risk calculation via `authorise`
-    and potential dispatch of a transaction to the exchange."""
-    symbol: str
-    order_type: str
-
-
-@dataclass
-class AuthorisationDecision:
-    """Returned by `authorise` and determines whether a transaction can be
-    made, and the appropriate parameters for that transaction."""
-    accepted: bool
-    params: Optional[TransactionParams]
+from algorunner.adapters.base import Adapter
+from algorunner.adapters.messages import InvalidOrder, OrderType, TransactionRequest, Tick
 
 
 class ShutdownRequest:
@@ -70,7 +56,7 @@ class BaseStrategy(ABC):
         def _listen(self):
             logger.info("listening for events and inbound messages")
 
-            exception_count = 0  # count exceptions over past 5 mins.
+            exception_count = 0  # @todo count exceptions over past 5 mins. Probs a job for a contextmanager.
             while True:
                 message = self.queue.get()
                 message_type = type(message)
@@ -97,45 +83,86 @@ class BaseStrategy(ABC):
                         logger.critical("exception rate has breached threshold, failing..")
                         raise StrategyExceptionThresholdBreached("too many exceptions encountered!")
 
-            logger.warn("trader thread has completed")
+            logger.warn("syncagent has completed")
 
         def _transaction_handler(self, trx: TransactionRequest):
-            decision = self.authorisation_guard(self.state, trx)
-            if not decision.accepted:
-                logger.info("transaction rejected: failed defined auth rules")
+            trx = self.authorisation_guard(self.state, trx)
+            if not trx.approved:
+                logger.info(f"transaction rejected: {trx.reason}")
                 return
 
-            logger.info("transaction accepted: passing to API adapter for dispatch")
-            self.api.execute(decision.params)
+            t = Timer(Hook.API_EXECUTE_DURATION)
+            with t:
+                try:
+                    logger.info("transaction accepted: passing to API adapter for dispatch")
+                    self.api.execute(trx)
+                except InvalidOrder:
+                    pass
+
+    def __call__(self, tick: Tick):
+        t = Timer(Hook.PROCESS_DURATION)
+        with t:
+            self.process(tick)
 
     def start_sync(self, queue: Queue, adapter: Adapter):
         self.sync_agent = self.SyncAgent(queue, adapter, self.log)
         self.sync_queue = queue
 
-    def open_position(self, symbol: str):
-        logger.debug(f"requesting to open new position ({symbol})")
-        self.sync_queue.put(TransactionRequest(symbol=symbol, order_type="BUY"))
+    def _place_order(self, params: dict):
+        try:
+            params = TransactionRequest(**params)
+            self.sync_queue.put(params)
+            hook(Hook.ORDER_REQUEST, params)
+        except TypeError:
+            raise InvalidOrder("invalid parameters supplied when attempting order")
 
-    def close_position(self, symbol: str):
-        logger.debug(f"requesting to close position ({symbol})")
-        self.sync_queue.put(TransactionRequest(symbol=symbol, order_type="SELL"))
+    def order_sell_limit(self, **kwargs):
+        if not all([kwargs["symbol"], kwargs["price"], kwargs["quantity"]]):
+            raise InvalidOrder("order_sell_limit requires symbol, price, and quantity")
+
+        self._place_order({**kwargs, **{
+            "order_type": OrderType.LIMIT_SELL
+        }})
+
+    def order_sell_market(self, **kwargs):
+        if not all([kwargs["symbol"], kwargs["quantity"]]):
+            raise InvalidOrder("order_sell_market requires symbol and quantity")
+
+        self._place_order({**kwargs, **{
+            "order_type": OrderType.MARKET_SELL
+        }})
+
+    def order_buy_limit(self, **kwargs):
+        if not all([kwargs["symbol"], kwargs["price"], kwargs["quantity"]]):
+            raise InvalidOrder("order_buy_limit requires symbol, price, and quantity")
+
+        self._place_order({**kwargs, **{
+            "order_type": OrderType.LIMIT_BUY
+        }})
+
+    def order_buy_market(self, **kwargs):
+        if not all([kwargs["symbol"], kwargs["quantity"]]):
+            raise InvalidOrder("order_buy_market requires symbol and quantity")
+
+        self._place_order({**kwargs, **{
+            "order_type": OrderType.MARKET_SELL
+        }})
 
     def shutdown(self):
         self.sync_agent.stop("shutdown requested")
 
-    @abstractmethod
-    def process(self, tick: pd.DataFrame):
-        """
-        @todo - accept Union[pd.DataFrame, RawMarketPayload]
-            where RawMarketPayload is a TypedDict w/ no pandas processing.
-        """
-        pass
+    def account_state(self) -> AccountState:
+        return self.sync_agent.account_state
 
-    @abstractmethod
     def authorise(self,
                   state: AccountState,
-                  trx: TransactionRequest) -> AuthorisationDecision:
+                  trx: TransactionRequest) -> TransactionRequest:
+        logger.info("no authorisation guard set: automatically authorising order")
+        trx.approved = True
+        return trx
+
+    @abstractmethod
+    def process(self, tick: Tick):
         """
-        @todo - define params.
         """
         pass

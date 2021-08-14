@@ -1,8 +1,8 @@
 from algorunner.adapters.base import (
-    AdapterError,
     factory,
     register_adapter
 )
+from algorunner.adapters.messages import AdapterError
 from algorunner.adapters._binance import BinanceAdapter
 from queue import Queue
 
