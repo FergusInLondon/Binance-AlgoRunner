@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 # AlgoRunner
+=======
+#  AlgoRunner
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+>>>>>>> develop
 
 A lightweight service for running algorithmic trading strategies against cryptocurrency exchanges. Currently under heavy development and defining the exchange interactions, as well moving towards support for multiple exchanges.
 
@@ -6,8 +12,8 @@ All development is done against the `develop` branch, although at this time that
 
 | Branch  | Status                                                       |
 | ------- | ------------------------------------------------------------ |
-| Master  | ![Unit Tests & Build](https://github.com/FergusInLondon/Runner/actions/workflows/pythonapp.yml/badge.svg)![CodeQL](https://github.com/FergusInLondon/Runner/actions/workflows/codeql-analysis.yml/badge.svg) |
-| Develop | ![Unit Tests & Build](https://github.com/FergusInLondon/Runner/actions/workflows/pythonapp.yml/badge.svg?branch=develop)![CodeQL](https://github.com/FergusInLondon/Runner/actions/workflows/codeql-analysis.yml/badge.svg?branch=develop) |
+| Master  | ![Unit Tests & Build](https://github.com/FergusInLondon/Runner/actions/workflows/pythonapp.yml/badge.svg)![CodeQL](https://github.com/FergusInLondon/Runner/actions/workflows/codeql-analysis.yml/badge.svg)[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) |
+| Develop | ![Unit Tests & Build](https://github.com/FergusInLondon/Runner/actions/workflows/pythonapp.yml/badge.svg?branch=develop)![CodeQL](https://github.com/FergusInLondon/Runner/actions/workflows/codeql-analysis.yml/badge.svg?branch=develop)[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) |
 
 ### Living Design Doc
 

@@ -9,14 +9,15 @@ from algorunner.exceptions import NoBalanceAvailable, InvalidUpdate
 
 class AccountState:
     """Stores a snapshot of the state of the account linked to the current exchange."""
+
     def __init__(self):
         self.balances = {}
         self.orders = {}
         self.permissions = {
             # assume true - as most likely case - until updated otherwise.
-            'can_withdraw': True,
-            'can_deposit': True,
-            'can_trade': True
+            "can_withdraw": True,
+            "can_deposit": True,
+            "can_trade": True,
         }
 
     def balance(self, asset: str) -> Tuple[float, float]:
@@ -32,14 +33,16 @@ class AccountState:
 
 class BaseUpdate(ABC):
     """BaseUpdate defines the interface an Update must adhere to."""
+
     REQUIRED_PROPS = []
 
     def __init__(self, **kwargs):
         for prop in self.REQUIRED_PROPS:
             if prop not in kwargs:
-                logger.error("invalid arguments supplied to update object!", {
-                    "expected": self.REQUIRED_PROPS, "actual": kwargs
-                })
+                logger.error(
+                    "invalid arguments supplied to update object!",
+                    {"expected": self.REQUIRED_PROPS, "actual": kwargs},
+                )
                 raise InvalidUpdate(prop, self.__class__)
 
         self.__dict__.update(kwargs)
@@ -52,6 +55,7 @@ class BaseUpdate(ABC):
 @dataclass
 class Position:
     """Position signifies the position associated with a given asset."""
+
     asset: str
     free: float
     locked: float
@@ -73,21 +77,22 @@ def is_update(cls):
 class OrderUpdate(BaseUpdate):
     """Recieved when there are changes to an order associated with the account."""
 
-    REQUIRED_PROPS = [
-        "symbol", "orderId", "side", "type", "status", "quantity"
-    ]
+    REQUIRED_PROPS = ["symbol", "orderId", "side", "type", "status", "quantity"]
 
     def handle(self, state: AccountState) -> AccountState:
         logger.info("recieved inbound update for pending transaction")
         order = state.orders.get(self.order_id, {})
         # @todo use the | operator when Py 3.9 is fixed.
-        state.orders[self.order_id] = {**order, **{
-            "symbol": self.symbol,
-            "side": self.side,
-            "type": self.type,
-            "status": self.status,
-            "quantity": self.quantity
-        }}
+        state.orders[self.order_id] = {
+            **order,
+            **{
+                "symbol": self.symbol,
+                "side": self.side,
+                "type": self.type,
+                "status": self.status,
+                "quantity": self.quantity,
+            },
+        }
         return state
 
 
@@ -95,13 +100,14 @@ class OrderUpdate(BaseUpdate):
 class BalanceUpdate(BaseUpdate):
     """An update containing an individual balance that has changed,
     expressed as delta between balances."""
+
     REQUIRED_PROPS = ["asset", "delta"]
 
     def handle(self, state: AccountState) -> AccountState:
         logger.info(f"recieved inbound balance update for '{self.asset}'")
-        asset_balance = state.balances.get(self.asset, Position(
-            asset=self.asset, free=0, locked=0
-        ))
+        asset_balance = state.balances.get(
+            self.asset, Position(asset=self.asset, free=0, locked=0)
+        )
 
         asset_balance.free += self.delta
         state.balances[self.asset] = asset_balance
@@ -111,6 +117,7 @@ class BalanceUpdate(BaseUpdate):
 @register_update
 class AccountUpdate(BaseUpdate):
     """An update containing any balances which have changed."""
+
     REQUIRED_PROPS = ["balances"]  # List[Position]
 
     def handle(self, state: AccountState) -> AccountState:
@@ -124,6 +131,7 @@ class AccountUpdate(BaseUpdate):
 @register_update
 class CapabilitiesUpdate(BaseUpdate):
     """The first update an account will recieve upon initialisation."""
+
     REQUIRED_PROPS = ["can_withdraw", "can_trade", "can_deposit", "positions"]
 
     def handle(self, state: AccountState) -> AccountState:

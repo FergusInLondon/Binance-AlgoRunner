@@ -1,34 +1,16 @@
+
 from signal import SIGTERM
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from algorunner.abstract import BaseStrategy
 from algorunner.adapters import Credentials
-from algorunner.exceptions import UnknownExchange
+from algorunner.adapters.messages import AdapterError
 from algorunner.runner import Runner
-
-
-@pytest.fixture
-def mock_adapter() -> MagicMock:
-    with patch('algorunner.runner.get_adapter') as mock:
-        mock.return_value = MagicMock()
-        yield mock.return_value
-
-@pytest.fixture
-def mock_strategy() -> MagicMock:
-    abstractmethods = BaseStrategy.__abstractmethods__
-    BaseStrategy.__abstractmethods__ = {}
-
-    yield MagicMock()
-
-    BaseStrategy.__abstractmethods__ = abstractmethods
 
 
 def test_handle_graceful_shutdown(mock_adapter: MagicMock, mock_strategy: MagicMock):
     with patch('algorunner.runner.signal') as mock_signal:
         r = Runner(
-            creds=Credentials(exchange="binance"),
+            creds=Credentials(exchange="binance", key="", secret=""),
             strategy=mock_strategy
         )
 
@@ -50,7 +32,7 @@ def invalid_exchange_should_trigger_exception(mock_strategy):
     have_exception = False
     try:
         Runner(Credentials(exchange="lolnoexchange"), mock_strategy)
-    except UnknownExchange:
+    except AdapterError:
         have_exception = True
 
     assert have_exception 

@@ -1,4 +1,5 @@
 .idea/
+.todo
 __pycache__/
 bot.ini
 plain.output

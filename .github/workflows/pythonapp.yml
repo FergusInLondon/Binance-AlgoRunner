@@ -27,9 +27,6 @@ jobs:
     - name: Install dependencies
       run: |
         make deps
-    - name: Run linter
+    - name: Run linting and tests
       run: |
-        make lint
-    - name: Run tests
-      run: |
-        make test
+        make ci

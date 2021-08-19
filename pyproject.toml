@@ -1,3 +1,7 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "AlgoRunner"
 version = "0.0.1"
@@ -16,7 +20,9 @@ loguru = "^0.5.3"
 behave = "^1.2.6"
 pytest = "^6.2.4"
 flake8 = "^3.9.2"
+black = "^21.7b0"
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.black]
+line-length = 80
+target-version = ['py37']
+include = '\.pyi?$'

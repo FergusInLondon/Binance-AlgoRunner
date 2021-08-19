@@ -1,10 +1,5 @@
-from algorunner.adapters._binance import BinanceAdapter
+from algorunner.adapters.messages import *  # noqa: F401, F403
 from algorunner.adapters.base import (  # noqa: F401
     Adapter,
-    Credentials,
-    InvalidPayloadRecieved
+    factory,
 )
-
-ADAPTERS = {
-    "binance": BinanceAdapter
-}

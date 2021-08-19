@@ -1,6 +1,6 @@
-.PHONY: env-check build lint deps test run todo
+.PHONY: help env-check build lint deps test ci run todo
 
-help:				## Show this help.
+help:           	## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
 env-check:			## Check that the current environment is capable of running AlgoRunner.
@@ -9,10 +9,11 @@ env-check:			## Check that the current environment is capable of running AlgoRun
 build:				## Build docker image, tagged "algorunner:<commit>" and "algorunner:latest"
 	docker build -t algorunner:latest -t algorunner:`git rev-parse --short HEAD` .
 
-docker: build			## Run the docker image after it's built.
-	docker run algorunner:latest
+fix:			## Attempt to fix linting issues with `black`
+	poetry run black algorunner
 
-lint:				## Run code quality checks
+lint:			## Run code quality checks
+	poetry run black --check algorunner
 	poetry run flake8
 
 deps: env-check			## Install all required dependencies (including for development)
@@ -22,7 +23,10 @@ test:				## Run all tests - including both unit tests and BDD scenarios
 	poetry run pytest
 	poetry run behave
 
-local:				## Run AlgoRunner locally via Poetry
+ci: lint test		## Run both linting and testing
+	@echo "finished running CI tasks"
+
+run:			## Run AlgoRunner
 	poetry run python run.py
 
 todo:				## Scan the codebase for items tagged with "@todo"

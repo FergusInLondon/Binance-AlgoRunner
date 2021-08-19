@@ -1,19 +1,11 @@
+from algorunner.hooks import Hook, hook
 from queue import Queue
 from signal import SIGTERM, signal
 
 from loguru import logger
 
-from algorunner import abstract
-from algorunner.adapters import ADAPTERS, Credentials, Adapter
-from algorunner.exceptions import UnknownExchange
-
-
-def get_adapter(exchange: str, *args, **kwargs) -> Adapter:
-    adapter_cls = ADAPTERS.get(exchange)
-    if not adapter_cls:
-        raise UnknownExchange(exchange)
-
-    return adapter_cls(*args, **kwargs)
+from algorunner.strategy import BaseStrategy
+from algorunner.adapters import Credentials, factory
 
 
 class Runner(object):
@@ -23,17 +15,15 @@ class Runner(object):
     `run.py`.
     """
 
-    def __init__(self,
-                 creds: Credentials,
-                 strategy: abstract.BaseStrategy):
+    def __init__(self, creds: Credentials, strategy: BaseStrategy):
         self.sync_queue = Queue()
-        self.adapter = get_adapter(creds["exchange"], self.sync_queue)
+        self.adapter = factory(creds.exchange, self.sync_queue)
         self.strategy = strategy
 
         self.strategy.start_sync(self.sync_queue, self.adapter)
         self.adapter.connect(creds)
         signal(SIGTERM, self._handle_sigterm())
-        logger.debug("finished initialising runner")
+        hook(Hook.RUNNER_INITIALISED)
 
     def _handle_sigterm(self):
         def _handler(signum, frame):
@@ -45,10 +35,10 @@ class Runner(object):
     def run(self):
         """ """
         self.adapter.monitor_user(self.trader_queue)
-        self.adapter.run(self.strategy, self.strategy.process)
-        logger.info("monitoring user stream and executing strategy")
+        self.adapter.run(self.strategy, self.strategy)
+        hook(Hook.RUNNER_STARTING)
 
     def stop(self):
-        logger.info("attempting to shutdown strategy execution and disconnect from exchange")
+        hook(Hook.RUNNER_STOPPING)
         self.strategy.shutdown()
         self.adapter.disconnect()
