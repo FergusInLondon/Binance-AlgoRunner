@@ -172,15 +172,6 @@ class BaseStrategy(ABC):
     def account_state(self) -> AccountState:
         return self.sync_agent.account_state
 
-    def authorise(
-        self, state: AccountState, trx: TransactionRequest
-    ) -> TransactionRequest:
-        logger.info(
-            "no authorisation guard set: automatically authorising order"
-        )
-        trx.approved = True
-        return trx
-
     def register_hooks(self, hooks: Dict[Hook, Callable]):
         def wrapper(fn):
             def _wrapped(*args, **kwargs):
@@ -190,6 +181,15 @@ class BaseStrategy(ABC):
 
         for h in hooks:
             hook_handler(h)(wrapper(hooks[h]))
+
+    def authorise(
+        self, state: AccountState, trx: TransactionRequest
+    ) -> TransactionRequest:
+        logger.info(
+            "no authorisation guard set: automatically authorising order"
+        )
+        trx.approved = True
+        return trx
 
     @abstractmethod
     def process(self, tick: Tick):

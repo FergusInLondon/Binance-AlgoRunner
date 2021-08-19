@@ -9,8 +9,11 @@ env-check:		## Check that the current environment is capable of running AlgoRunn
 build:			## Build docker image, tagged "algorunner:<commit>"
 	echo "build docker container"
 
-lint:			## Run code quality checks
+fix:			## Attempt to fix linting issues with `black`
 	poetry run black algorunner
+
+lint:			## Run code quality checks
+	poetry run black --check algorunner
 	poetry run flake8
 
 deps:			## Install all required dependencies (including for development)
