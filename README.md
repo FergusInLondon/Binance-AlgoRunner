@@ -46,7 +46,7 @@ class Example(BaseStrategy):
 
 From the `BaseStrategy` class you can interact with the market via calling `self.open_position(symbol: str)` and `self.close_position(symbol: str)` - this will subsequently be passed through to the `authorise(...)` call which will determine whether that interaction is allowed, whether it fits in with the users defined approach to risk, and what size the that position should be. Under the hood this is all handles via events.
 
-For information on the classes used - i.e. `AuthorisationDecision`, `TransactionRequest`, and `AccountState` - please see the API documentation.
+For information on the classes used - i.e. `AuthorisationDecision`, `TransactionRequest`, and `AccountState` - please see the [API documentation](https://fergusinlondon.github.io/Runner/).
 
 ## Required Configuration
 

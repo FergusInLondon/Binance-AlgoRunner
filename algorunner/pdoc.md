@@ -3,6 +3,8 @@
 
 AlgoRunner is a simple framework that can be used to build algorithmic trading strategies against cryptocurrency exchanges.
 
+For information on the development, check the [repository](https://github.com/FergusInLondon/Runner).
+
 > **This documentation covers the objects that you'll need to interact with when using AlgoRunner; it doesn't necessarily cover the internals of the system.**
 
 ## Using AlgoRunner
