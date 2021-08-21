@@ -1,57 +1,113 @@
-# Runner ![Runner](https://github.com/FergusInLondon/Runner/workflows/Runner/badge.svg)
+#  AlgoRunner
 
-A massive WIP that may or may not be worth an actual README at this point in time. It has no tests, and the account functionality is still being baked in.
+A lightweight service for running algorithmic trading strategies against cryptocurrency exchanges. Currently under heavy development and defining the exchange interactions, as well moving towards support for multiple exchanges.
 
-Currently it does invoke a strategy and provides it with real-time streamed data from Binance though.
+All development is done against the `develop` branch, although at this time that's likely the branch you actually want to browse.
 
-### Note
-This is *vaguely* related to my form of Enigma Catalyst, as (a) I really want to brush up on my Python, and (b) Binance seems like the best exchange to implement streaming trades on - so I'd like to get used to interacting with them.
+| Branch  | Status                                                       |
+| ------- | ------------------------------------------------------------ |
+| Master  | ![Unit Tests & Build](https://github.com/FergusInLondon/Runner/actions/workflows/pythonapp.yml/badge.svg)![CodeQL](https://github.com/FergusInLondon/Runner/actions/workflows/codeql-analysis.yml/badge.svg)[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) |
+| Develop | ![Unit Tests & Build](https://github.com/FergusInLondon/Runner/actions/workflows/pythonapp.yml/badge.svg?branch=develop)![CodeQL](https://github.com/FergusInLondon/Runner/actions/workflows/codeql-analysis.yml/badge.svg?branch=develop)[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) |
 
-## Example
+### Living Design Doc
 
-Check `example.py` for a runnable version of this strategy:
+...
+
+## Defining a strategy
+
+To define a strategy to execute you simply need to define a `Strategy` class and place it in the `./strategies` folder where it can be loaded. A strategy **must** inherit from `BaseStrategy` and **must** implement two methods: `process` and `authorise`.
 
 ```python
-class ExampleStrategy(object):
-    """
-        A simple example strategy that computes the average price change over
-        the previous 5 2000ms updates. 
-    """
+import pandas as pd
 
-    def start(self, control):
-        self.series = pd.DataFrame()
-        self.control = control
+from algorunner.abstract import BaseStrategy
+from algorunner.abstract.base_strategy import (
+    AccountState, TransactionRequest, AuthorisationDecision
+)
 
-    def process(self, kline):
-        self.series = self.series.append(kline)
+
+class Example(BaseStrategy):
+    def __init__(self):
+        self.series = pd.DataFrame
+        super().__init__()
+
+    def process(self, tick: pd.DataFrame):
+      	"""process accepts a DataFrame containing the latest tick data."""
+        self.series = self.series.append(tick)
 
         if self.series.shape[0] > 5:
-            print("Average price change over past 5 windows: ", pd.to_numeric(self.series[-5:]["PriceChange"]).mean())
+            recent_window = pd.to_numeric(self.series[-5:]["PriceChange"])
+            print("Average price change over past 5 windows: ", recent_window.mean())
+
+    def authorise(self, state: AccountState, trx: TransactionRequest) -> AuthorisationDecision:
+      	"""authorise is used to perform any risk calculations and position sizing."""
+        pass
 ```
 
-When executed via the runner, this will calculate the average price change over the past 5 2000ms updates, and display it to the user.
+From the `BaseStrategy` class you can interact with the market via calling `self.open_position(symbol: str)` and `self.close_position(symbol: str)` - this will subsequently be passed through to the `authorise(...)` call which will determine whether that interaction is allowed, whether it fits in with the users defined approach to risk, and what size the that position should be. Under the hood this is all handles via events.
+
+For information on the classes used - i.e. `AuthorisationDecision`, `TransactionRequest`, and `AccountState` - please see the [API documentation](https://fergusinlondon.github.io/Runner/).
+
+## Required Configuration
+
+Configuration can be done via: a `.ini` file, environment variables, or a combination of both.
 
 ```
-python example.py
-Average price change over past 5 windows:  26.694
-Average price change over past 5 windows:  26.356
-Average price change over past 5 windows:  26.444
-Average price change over past 5 windows:  26.246000000000002
-Average price change over past 5 windows:  26.272000000000002
-Average price change over past 5 windows:  26.706
-Average price change over past 5 windows:  27.142000000000003
-Average price change over past 5 windows:  27.182
-Average price change over past 5 windows:  27.562
-Average price change over past 5 windows:  28.002
-Average price change over past 5 windows:  28.246000000000002
-Average price change over past 5 windows:  28.49
-Average price change over past 5 windows:  28.754
+[credentials]
+exchange = binance             # Identifier of the target exchange.
+api_key = binanceAPIKey        # API Key for the exchange
+api_secret = binanceAPISecret  # API Secret for the exchange
+
+[strategy]
+name = Example     # Strategy to execute
+symbol = BTCUSDT   # Symbol to execute the strategy against
 ```
 
----
+By default AlgoRunner will try and read a file named `bot.ini`, but this can be overridden by the `--config` flag:
 
-## August 2021 Update: AlgoRunner V2.0
+```
+$ python run.py --config [config .ini file]
+```
 
-A preview of this release is available in the [`develop`](https://github.com/FergusInLondon/Runner/tree/develop) branch; and progress tracking is available via the [Version 2 Project Board](https://github.com/FergusInLondon/Runner/projects/1).
+Alternatively, configuration can also be done via: a `.ini` file, environment variables, or a combination of both. 
 
-This version aims to introduce a new design to allow easier exchange API interactions, concurrent processing of market orders, user definable algorithms *and* risk calculations, and improved dependency management.
+| `.ini` variable        | environment variable  | CLI flag         |
+| ---------------------- | --------------------- | ---------------- |
+| credentials.exchange   | ALGORUNNER_EXCHANGE   | --exchange       |
+| credentials.api_key    | ALGORUNNER_API_KEY    | --api-key        |
+| credentials.api_secret | ALGORUNNER_API_SECRET | --api-secret     |
+| strategy.name          | -                     | -s / --strategy  |
+| strategy.symbol        | -                     | --trading-symbol |
+
+**It's advisable not to pass any exchange details - i.e. `credentials.*`  variables - via either the configuration file or the CLI!**
+
+## Executing AlgoRunner
+
+There are to methods to run AlgoRunner: the recommended way is via Docker.
+
+### Using Docker
+
+To build a Docker Image simply run `make docker` from the root of this repository; this will create an image with the tags `algorunner:<commit-hash>` and `algorunner:latest`, before running the image. **There are no pre-built Docker Images available.**
+
+```
+$ make docker # that's genuinely it, I promise.
+```
+
+### Running Locally
+
+To run the service locally it's also relatively trivial:
+
+```
+$ make deps  # this will install all dependencies
+$ make local # this will run the service in the environment provided by poetry
+```
+
+Note: you **must** have `poetry` - a python dependency manager - installed on your system to run AlgoRunner. If you don't then the `deps` target of the Makefile will *attempt* to install it on your behalf.
+
+## Development
+
+For details on development please see `DEVELOPMENT.md`, and for details on the automated test suite please see `test/TESTING.md`.
+
+## License
+
+This software is licensed by the terms outlined in the [*The MIT License*](https://opensource.org/licenses/MIT). For the full and entire text of this license please see `LICENSE.txt`.

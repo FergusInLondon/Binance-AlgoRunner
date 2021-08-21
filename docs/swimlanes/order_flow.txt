@@ -1,0 +1,48 @@
+// swimlanes.io: Order Flow
+
+autonumber
+
+Strategy -> SyncAgent: OrderRequest
+
+note:
+When the **Strategy** determines that an order should be placed, it triggers the dispatch of an **OrderRequest** to the **SyncAgent** queue.
+
+
+SyncAgent -> Authorise: OrderRequest, AccountState
+
+Authorise -> SyncAgent: OrderRequest
+
+note:
+The **SyncAgent** calls the **Authorise** method; this will determine whether the order should be placed, in addition to the type of order and the quantities involved.
+
+
+--: Transaction Approved
+
+SyncAgent -> Adapter: OrderRequest
+
+Adapter --> Exchange: REST: Test Order
+
+note: If supported by the exchange, and it doesn't result in too much of a performance decrease, then a test order can be dispatched to verify the validity of the request.
+
+Adapter -> Exchange: REST: Place Order
+
+Adapter -> SyncAgent: OrderStatus
+
+note:
+The **Adapter** returns an **OrderStatus** object built using the response from the underlying API request. At this point the **OrderStatus** will likely contain an ID, status, amount, and percentage "filled".
+
+The **SyncAgent** can then maintain a registry of orders and their status.
+
+--: Transaction Updates
+
+...: {fas-spinner}
+
+Exchange -> Adapter: Stream: Order Update
+
+Adapter -> SyncAgent: OrderUpdate
+
+note:
+Subsequent updates to the order arrive via the *user stream*, which result in an **OrderUpdate** being sent to the **SyncAgent** message queue - resulting in an update to the **OrderStatus** registry.
+
+
+
