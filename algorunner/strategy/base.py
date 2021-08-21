@@ -35,7 +35,7 @@ class BaseStrategy(ABC):
     positions)
     """
 
-    class SyncAgent:
+    class _SyncAgent:
         def __init__(self, queue: Queue, adapter: Adapter, auth: Callable):
             self.queue = queue
             self.api = adapter
@@ -125,7 +125,7 @@ class BaseStrategy(ABC):
             self.process(tick)
 
     def start_sync(self, queue: Queue, adapter: Adapter):
-        self.sync_agent = self.SyncAgent(queue, adapter, self.log)
+        self.sync_agent = self._SyncAgent(queue, adapter, self.log)
         self.sync_queue = queue
 
     def _place_order(self, params: dict):

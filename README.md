@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-# AlgoRunner
-=======
 #  AlgoRunner
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-
->>>>>>> develop
 
 A lightweight service for running algorithmic trading strategies against cryptocurrency exchanges. Currently under heavy development and defining the exchange interactions, as well moving towards support for multiple exchanges.
 

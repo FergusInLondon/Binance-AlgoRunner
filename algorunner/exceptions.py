@@ -1,3 +1,9 @@
+"""
+Very few - if any - of these are relevant to user-defined strategies; so
+are perhaps worthy of *not* including in the `pdoc` docs? Alternatively,
+do we import *all* user required objects in to `algorunner/__init__.py`
+and coordinate the docs in one place, *and* simplify imports for strategies?
+"""
 from typing import Optional, List
 
 MSG_INVALID_CONFIG = "unable to parse all required values from configuration"

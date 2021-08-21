@@ -9,10 +9,10 @@ env-check:			## Check that the current environment is capable of running AlgoRun
 build:				## Build docker image, tagged "algorunner:<commit>" and "algorunner:latest"
 	docker build -t algorunner:latest -t algorunner:`git rev-parse --short HEAD` .
 
-fix:			## Attempt to fix linting issues with `black`
+fix:				## Attempt to fix linting issues with `black`
 	poetry run black algorunner
 
-lint:			## Run code quality checks
+lint:				## Run code quality checks
 	poetry run black --check algorunner
 	poetry run flake8
 
@@ -23,11 +23,14 @@ test:				## Run all tests - including both unit tests and BDD scenarios
 	poetry run pytest
 	poetry run behave
 
-ci: lint test		## Run both linting and testing
+ci: lint test			## Run both linting and testing
 	@echo "finished running CI tasks"
 
-run:			## Run AlgoRunner
+run:				## Run AlgoRunner
 	poetry run python run.py
+
+docs:				## Generate API documentation using "pdoc"
+	poetry run pdoc -o ./docs algorunner
 
 todo:				## Scan the codebase for items tagged with "@todo"
 	@grep -r "@todo" --exclude=\*.pyc algorunner
