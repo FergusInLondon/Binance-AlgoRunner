@@ -1,4 +1,4 @@
-.PHONY: help env-check build lint deps test ci run todo
+.PHONY: help env-check build lint deps test ci run todo docs
 
 help:           	## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
@@ -31,6 +31,8 @@ run:				## Run AlgoRunner
 
 docs:				## Generate API documentation using "pdoc"
 	poetry run pdoc -o ./docs algorunner
+	rm docs/index.html
+	mv docs/algorunner.html docs/index.html
 
 todo:				## Scan the codebase for items tagged with "@todo"
 	@grep -r "@todo" --exclude=\*.pyc algorunner
